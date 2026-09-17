@@ -53,7 +53,6 @@ class l1b(initL1b):
 
         self.logger.info("End of the L1B Module!")
 
-
     def equalization(self, toa, eq_add, eq_mult):
         """
         Equlization. Apply an offset and a gain.
@@ -62,18 +61,18 @@ class l1b(initL1b):
         :param eq_mult: Gain factor, adimensional
         :return: TOA in DN, equalized
         """
-        #TODO
+        toa = (toa - eq_add) / eq_mult
         return toa
 
-    def restoration(self,toa,gain):
+    def restoration(self, toa, gain):
         """
         Absolute Radiometric Gain - restore back to radiances
         :param toa: TOA in DN
         :param gain: gain in [rad/DN]
         :return: TOA in radiances [mW/sr/m2]
         """
-        #TODO
-        self.logger.debug('Sanity check. TOA in radiances after gain application ' + str(toa[1,-1]) + ' [mW/m2/sr]')
+        toa = toa * gain
+        self.logger.debug('Sanity check. TOA in radiances after gain application ' + str(toa[1, -1]) + ' [mW/m2/sr]')
 
         return toa
 
