@@ -114,7 +114,36 @@ class opticalPhase(initIsm):
         :param band: band
         :return: TOA image 2D in radiances [mW/m2]
         """
-        # TODO
+        isrf, wv_isrf = readIsrf(self.auxdir+'/'+self.ismConfig.isrffile, band)
+
+        # Initialize output [100x150]
+        toa = np.zeros((sgm_toa.shape[0], sgm_toa.shape[1]))
+
+        # Normalize ISRF by dividing by the sum of ISRF
+        isrf = isrf / np.sum(isrf)
+        # check sum of normalized should be 1
+        assert np.sum(isrf) == 1
+
+        # Convert to nm
+        wv_isrf = wv_isrf * 1000
+
+        # Old version not used
+        # Interpolate the scene to the same wavelengths of the array
+        #cs = interp1d(wv_isrf, isrf, fill_value=(0,0), bounds_error=False)
+        #interp_isrf = cs(sgm_wv)  # 1D vector
+
+        # long track
+        # for ialt in range(sgm_toa.shape[0]):
+        #     # cross track
+        #     for iact in range(sgm_toa.shape[1]):
+        #         toa[ialt, iact] = np.sum(sgm_toa[ialt, iact, :] * interp_isrf)
+
+        # long track
+        for ialt in range(sgm_toa.shape[0]):
+            # cross track
+            for iact in range(sgm_toa.shape[1]):
+                cs = interp1d(sgm_wv, sgm_toa[ialt, iact, :], fill_value=(0, 0), bounds_error=False)
+                sgm_inter = cs(wv_isrf)
+                toa[ialt, iact] = np.sum(sgm_inter * isrf)
+
         return toa
-
-
