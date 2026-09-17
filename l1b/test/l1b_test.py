@@ -7,18 +7,18 @@ RTOL = 1e-5
 ATOL = 1e-8
 
 
-def compare_netcdf_files(output_folder, target_folder,
+def compare_netcdf_files(output_folder, target_folder, filename,
                          rtol=RTOL, atol=ATOL):
 
     output_folder = Path(output_folder)
     target_folder = Path(target_folder)
 
     output_files = sorted(
-        output_folder.glob("l1b_toa_VNIR-*.nc")
+        output_folder.glob(filename + "*.nc")
     )
 
     if not output_files:
-        print("No matching NetCDF files found.")
+        print(f"No matching NetCDF files found for {filename}.")
         return False
 
     all_files_equal = True

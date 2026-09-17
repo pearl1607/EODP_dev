@@ -17,12 +17,10 @@ outdir_ism_target = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_TER_2021\EODP-TS-I
 l1b_main.main(auxdir, indir, outdir)
 
 # Run test to compare with target outputs
-l1b_test.compare_netcdf_files(outdir, outdir_target,)
-
-# Test ism outputs
-l1b_test.compare_netcdf_files(outdir_ism, outdir_ism_target)
+l1b_test.compare_netcdf_files(outdir, outdir_target, "l1b_toa_VNIR-")
 
 # Run ISM
 ism_main.main(auxdir, indir_ism, outdir_ism)
 
-# TODO improve output test to accept variable file names, ism and l1b
+# Test ism outputs
+l1b_test.compare_netcdf_files(outdir_ism, outdir_ism_target, "ism_toa_isrf_VNIR-")
