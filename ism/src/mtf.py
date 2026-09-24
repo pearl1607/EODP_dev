@@ -77,7 +77,7 @@ class mtf:
 
         return Hsys
 
-    def freq2d(self,nlines, ncolumns, D, lambd, focal, w):
+    def freq2d(self, nlines, ncolumns, D, lambd, focal, w):
         """
         Calculate the relative frequencies 2D (for the diffraction MTF)
         :param nlines: Lines of the TOA
@@ -91,10 +91,32 @@ class mtf:
         :return fnAct: 1D normalised frequencies 2D ACT (f/(1/w))
         :return fnAlt: 1D normalised frequencies 2D ALT (f/(1/w))
         """
-        #TODO
-        return fn2D, fr2D, fnAct, fnAlt
+        fstepAlt = 1 / nlines / w
+        fstepAct = 1 / ncolumns / w
+        eps = 1e-6
 
-    def mtfDiffract(self,fr2D):
+        # frequencies along track
+        fAlt = np.arange(-1 / (2 * w), 1 / (2 * w) - eps, fstepAlt)
+        # frequencies across track
+        fAct = np.arange(-1 / (2 * w), 1 / (2 * w) - eps, fstepAct)
+
+        [fAltxx, fActxx] = np.meshgrid(fAlt, fAct, indexing='ij')
+        f2D = np.sqrt(fAltxx * fAltxx + fActxx * fActxx)
+
+        # cutoff frequency fc
+        f_c = D / (lambd * focal)
+
+        # Normalize
+        fn2D = f2D / (1 / w)
+        fr2D = f2D / f_c
+        fAct = fAct / (1 / w)
+        fAlt = fAlt / (1 / w)
+
+        print(f"FRD: {fr2D}")
+
+        return fn2D, fr2D, fAct, fAlt
+
+    def mtfDiffract(self, fr2D):
         """
         Optics Diffraction MTF
         :param fr2D: 2D relative frequencies (f/fc), where fc is the optics cut-off frequency
