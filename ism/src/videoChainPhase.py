@@ -4,6 +4,7 @@ import numpy as np
 from common.plot.plotMat2D import plotMat2D
 from common.plot.plotF import plotF
 
+
 class videoChainPhase(initIsm):
 
     def __init__(self, auxdir, indir, outdir):
@@ -19,7 +20,7 @@ class videoChainPhase(initIsm):
                          self.ismConfig.OCF,
                          self.ismConfig.ADC_gain)
 
-        self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [V]")
+        self.logger.debug("TOA [0,0] " + str(toa[0, 0]) + " [V]")
 
         # Digitisation
         # -------------------------------------------------------------------------------
@@ -29,19 +30,19 @@ class videoChainPhase(initIsm):
                           self.ismConfig.min_voltage,
                           self.ismConfig.max_voltage)
 
-        self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [DN]")
+        self.logger.debug("TOA [0,0] " + str(toa[0, 0]) + " [DN]")
 
         # Plot
         if self.ismConfig.save_vcu_stage:
             saveas_str = self.globalConfig.ism_toa_vcu + band
             title_str = 'TOA after the VCU phase [DN]'
-            xlabel_str='ACT'
-            ylabel_str='ALT'
+            xlabel_str = 'ACT'
+            ylabel_str = 'ALT'
             plotMat2D(toa, title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
 
             idalt = int(toa.shape[0]/2)
             saveas_str = saveas_str + '_alt' + str(idalt)
-            plotF([], toa[idalt,:], title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
+            plotF([], toa[idalt, :], title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
 
         return toa
 
@@ -55,7 +56,7 @@ class videoChainPhase(initIsm):
         :param gain_adc: Gain of the Analog-to-digital conversion [-]
         :return: output toa in [V]
         """
-        #TODO
+        toa = toa * OCF * gain_adc
         return toa
 
     def digitisation(self, toa, bit_depth, min_voltage, max_voltage):
@@ -67,6 +68,7 @@ class videoChainPhase(initIsm):
         :param max_voltage: maximum voltage
         :return: toa in digital counts
         """
-        #TODO
+        toa_dn = np.round(toa / (max_voltage - min_voltage) * (2**bit_depth - 1))
+        mask = toa_dn < 0
+        toa_dn[mask] = 0
         return toa_dn
-

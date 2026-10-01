@@ -46,7 +46,7 @@ class opticalPhase(initIsm):
                              self.ismConfig.f,
                              self.ismConfig.Tr)
 
-        self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [e-]")
+        self.logger.debug("TOA [0,0] " + str(toa[0, 0]) + " [e-]")
 
         # Spatial filter
         # -------------------------------------------------------------------------------
@@ -61,9 +61,7 @@ class opticalPhase(initIsm):
 
         # Apply system MTF
         toa = self.applySysMtf(toa, Hsys) # always calculated
-        self.logger.debug("TOA [0,0] " +str(toa[0,0]) + " [e-]")
-
-
+        self.logger.debug("TOA [0,0] " + str(toa[0, 0]) + " [e-]")
 
         # Write output TOA & plots
         # -------------------------------------------------------------------------------
@@ -73,13 +71,13 @@ class opticalPhase(initIsm):
             writeToa(self.outdir, saveas_str, toa)
 
             title_str = 'TOA after the optical phase [mW/sr/m2]'
-            xlabel_str='ACT'
-            ylabel_str='ALT'
+            xlabel_str = 'ACT'
+            ylabel_str = 'ALT'
             plotMat2D(toa, title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
 
             idalt = int(toa.shape[0]/2)
             saveas_str = saveas_str + '_alt' + str(idalt)
-            plotF([], toa[idalt,:], title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
+            plotF([], toa[idalt, :], title_str, xlabel_str, ylabel_str, self.outdir, saveas_str)
 
         return toa
 
@@ -92,9 +90,8 @@ class opticalPhase(initIsm):
         :param Tr: Optical transmittance [-]
         :return: TOA image in irradiances [mW/m2]
         """
-        # TODO
+        toa = Tr * toa * np.pi / 4 * (D / f)**2
         return toa
-
 
     def applySysMtf(self, toa, Hsys):
         """
@@ -103,7 +100,10 @@ class opticalPhase(initIsm):
         :param Hsys: System MTF
         :return: TOA image in irradiances [mW/m2]
         """
-        # TODO
+        GE = fft2(toa)
+        toa_ft = GE * fftshift(Hsys)
+        toa_ft = np.real(ifft2(toa_ft))
+
         return toa_ft
 
     def spectralIntegration(self, sgm_toa, sgm_wv, band):
@@ -122,21 +122,11 @@ class opticalPhase(initIsm):
         # Normalize ISRF by dividing by the sum of ISRF
         isrf = isrf / np.sum(isrf)
         # check sum of normalized should be 1
-        assert np.sum(isrf) == 1
+        # Sum is actually 0.9999999999999999 sometimes
+        assert np.isclose(np.sum(isrf), 1)
 
         # Convert to nm
         wv_isrf = wv_isrf * 1000
-
-        # Old version not used
-        # Interpolate the scene to the same wavelengths of the array
-        #cs = interp1d(wv_isrf, isrf, fill_value=(0,0), bounds_error=False)
-        #interp_isrf = cs(sgm_wv)  # 1D vector
-
-        # long track
-        # for ialt in range(sgm_toa.shape[0]):
-        #     # cross track
-        #     for iact in range(sgm_toa.shape[1]):
-        #         toa[ialt, iact] = np.sum(sgm_toa[ialt, iact, :] * interp_isrf)
 
         # long track
         for ialt in range(sgm_toa.shape[0]):
