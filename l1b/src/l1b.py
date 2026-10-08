@@ -77,5 +77,43 @@ class l1b(initL1b):
         return toa
 
     def plotL1bToa(self, toa_l1b, outputdir, band):
-        #TODO
-        a=1 # dummy
+        """
+        Plot the L1B TOA after radiometric correction and restoration.
+
+        :param toa_l1b: L1B TOA image in radiances [mW/sr/m2]
+        :param outputdir: Output directory
+        :param band: Spectral band
+        """
+        # TOA in 2D image
+        plt.figure()
+        plt.imshow(toa_l1b, aspect='auto')
+        plt.colorbar(label='Radiance [mW/sr/m²]')
+        plt.title('L1B TOA - Band ' + band)
+        plt.xlabel('ACT')
+        plt.ylabel('ALT')
+
+        filename_2d = os.path.join(
+            outputdir,
+            'l1b_toa_' + band + '_2D.png'
+        )
+
+        plt.savefig(filename_2d, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # TOA cut for the central ALT position
+        idalt = toa_l1b.shape[0] // 2
+        plt.figure()
+        plt.plot(toa_l1b[idalt, :])
+        plt.title(
+            'L1B TOA - Band ' + band +
+            ' - ALT ' + str(idalt)
+        )
+        plt.xlabel('ACT')
+        plt.ylabel('Radiance [mW/sr/m²]')
+        plt.grid(True)
+        filename_1d = os.path.join(
+            outputdir,
+            'l1b_toa_' + band + '_ALT' + str(idalt) + '.png'
+        )
+        plt.savefig(filename_1d, dpi=300, bbox_inches='tight')
+        plt.close()
