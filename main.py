@@ -2,6 +2,7 @@
 import l1b.mainL1b as l1b_main
 import l1b.test.l1b_test as l1b_test
 import ism.mainIsm as ism_main
+import l1c.mainL1c as l1c_main
 
 # Directory - this is the common directory for the execution of the E2E, all modules
 auxdir = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_dev\auxiliary"
@@ -12,6 +13,9 @@ outdir_target = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_TER_2021\EODP-TS-L1B\o
 indir_ism = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_TER_2021\EODP-TS-ISM\input\gradient_alt100_act150" # small scene
 outdir_ism = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_dev\ism_my_output"
 outdir_ism_target = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_TER_2021\EODP-TS-ISM\output"
+
+input_l1c = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_TER_2021\EODP-TS-L1C\input\gm_alt100_act_150,C:\Users\alisa\Documents\uc3m\eodp\EODP_TER_2021\EODP-TS-L1C\input\l1b_output"
+outdir_l1c = r"C:\Users\alisa\Documents\uc3m\eodp\EODP_dev\my_l1c_output"
 
 # Run L1B
 l1b_main.main(auxdir, indir, outdir)
@@ -24,3 +28,6 @@ ism_main.main(auxdir, indir_ism, outdir_ism)
 
 # Test ism outputs
 l1b_test.compare_netcdf_files(outdir_ism, outdir_ism_target, "ism_toa_isrf_VNIR-")
+
+# Run L1C
+l1c_main.main(auxdir, input_l1c, outdir_l1c)
