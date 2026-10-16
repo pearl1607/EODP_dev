@@ -185,7 +185,7 @@ class mtf:
         Hmotion = np.sinc(kmotion * fn2D)
         return Hmotion
 
-    def plotMtf(self,Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
+    def plotMtf(self, Hdiff, Hdefoc, Hwfe, Hdet, Hsmear, Hmotion, Hsys, nlines, ncolumns, fnAct, fnAlt, directory, band):
         """
         Plotting the system MTF and all of its contributors
         :param Hdiff: Diffraction MTF
@@ -203,6 +203,92 @@ class mtf:
         :param band: band
         :return: N/A
         """
-        #TODO
 
+        os.makedirs(directory, exist_ok=True)
 
+        # Define the six contributions and the system MTF
+        mtfs = [
+            ("Diffraction", Hdiff),
+            ("Defocus", Hdefoc),
+            ("WFE aberrations", Hwfe),
+            ("Detector", Hdet),
+            ("Smearing", Hsmear),
+            ("Motion blur", Hmotion),
+        ]
+
+        # Center indices: zero-frequency slices
+        center_line = nlines // 2
+        center_column = ncolumns // 2
+
+        # Plot all MTF ACT
+        plt.figure(figsize=(10, 6))
+
+        for name, H in mtfs:
+            plt.plot(fnAct, H[center_line, :], label=name)
+        plt.plot(fnAct, Hsys[center_line, :], label="System MTF", linewidth=4, linestyle="dotted")
+
+        plt.title("System MTF - slice ACT")
+        plt.xlabel("Normalized spatial frequency [cycles/pixel]")
+        plt.ylabel("MTF")
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.ylim(bottom=0)
+        plt.xlim(left=0, right=0.50001)
+        plt.tight_layout()
+
+        filename = os.path.join(
+            directory, f"mtf_ACT_{band}.png"
+        )
+        plt.savefig(filename, dpi=150)
+        plt.close()
+
+        # Plot all MTF ALT
+        plt.figure(figsize=(10, 6))
+
+        for name, H in mtfs:
+            plt.plot(fnAlt, H[:, center_column], label=name)
+        plt.plot(fnAct, Hsys[center_line, :], label="System MTF", linewidth=4, linestyle="dotted")
+
+        plt.title("System MTF - slice ALT")
+        plt.xlabel("Normalized spatial frequency [cycles/pixel]")
+        plt.ylabel("MTF")
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.ylim(bottom=0)
+        plt.xlim(left=0, right=0.50001)
+        plt.tight_layout()
+
+        filename = os.path.join(
+            directory, f"mtf_ALT_{band}.png"
+        )
+        plt.savefig(filename, dpi=150)
+        plt.close()
+
+        # Plot only system MTF in 2D ALT and ACT
+        plt.figure(figsize=(9, 7))
+
+        extent = [
+            fnAct[0], fnAct[-1],
+            fnAlt[0], fnAlt[-1]
+        ]
+
+        image = plt.imshow(
+            Hsys,
+            extent=extent,
+            origin="lower",
+            aspect="auto",
+            interpolation="nearest",
+            cmap="jet"
+        )
+
+        plt.colorbar(image, label="System MTF")
+        plt.xlabel("ACT [cycles/pixel]")
+        plt.ylabel("ALT [cycles/pixel]")
+        plt.title(f"2D System MTF - Band {band}")
+        plt.tight_layout()
+
+        filename = os.path.join(
+            directory, f"mtf_2D_{band}.png"
+        )
+        plt.savefig(filename, dpi=150)
+        plt.close()
