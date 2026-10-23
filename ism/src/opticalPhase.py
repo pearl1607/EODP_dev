@@ -91,6 +91,9 @@ class opticalPhase(initIsm):
         :return: TOA image in irradiances [mW/m2]
         """
         toa = Tr * toa * np.pi / 4 * (D / f)**2
+
+        self.logger.info(f"RAD2IRR {Tr * np.pi / 4 * (D / f)**2}")
+
         return toa
 
     def applySysMtf(self, toa, Hsys):

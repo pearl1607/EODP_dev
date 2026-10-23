@@ -109,6 +109,9 @@ class detectionPhase(initIsm):
         e_photon = planck * c / wv
 
         toa_ph = e_in / e_photon
+
+        self.logger.info(f"IRR2PHO {area_pix * tint / e_photon}")
+
         return toa_ph
 
     def phot2Electr(self, toa, QE):
@@ -119,6 +122,9 @@ class detectionPhase(initIsm):
         :return: toa in electrons
         """
         toa = toa * QE
+
+        self.logger.info(f"PHO2ELECT {QE}")
+
         return toa
 
     def badDeadPixels(self, toa, bad_pix, dead_pix, bad_pix_red, dead_pix_red):
