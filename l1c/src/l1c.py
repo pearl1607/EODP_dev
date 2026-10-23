@@ -103,21 +103,19 @@ class l1c(initL1c):
         step = 1000
 
         # L1B grid
-        #for i in range(lat_l1b.shape[0]):
-        plt.plot(lon_l1b[0, :], lat_l1b[0, :], 'b-', linewidth=0.5)
-        plt.plot(lon_l1b[-1, :], lat_l1b[-1, :], 'b-', linewidth=0.5)
-
-        #for j in range(lat_l1b.shape[1]):
-        plt.plot(lon_l1b[:, 0], lat_l1b[:, 0], 'b-', linewidth=0.5)
-        plt.plot(lon_l1b[:, -1], lat_l1b[:, -1], 'b-', linewidth=0.5)
+        # Plot outer boundary of L1B grid
+        plt.plot(lon_l1b[0, :], lat_l1b[0, :], 'b-', linewidth=0.8, label='L1B grid boundary')
+        plt.plot(lon_l1b[-1, :], lat_l1b[-1, :], 'b-', linewidth=0.8)
+        plt.plot(lon_l1b[:, 0], lat_l1b[:, 0], 'b-', linewidth=0.8)
+        plt.plot(lon_l1b[:, -1], lat_l1b[:, -1], 'b-', linewidth=0.8)
 
         # L1C grid
-        for i in range(0, len(lat_l1c), step):
-            plt.scatter(lon_l1c, lat_l1c, s=0.2, c="red")
+        plt.scatter(lon_l1c, lat_l1c, s=0.2, c="red", label='L1C MGRS grid')
 
         plt.xlabel('Longitude [deg]')
         plt.ylabel('Latitude [deg]')
         plt.title('L1B and L1C geographic grids')
+        plt.legend()
         plt.grid(True)
         plt.axis('equal')
 
@@ -130,32 +128,104 @@ class l1c(initL1c):
         """
         Plot the spatial sampling distance between adjacent L1B pixels along the central row.
         """
-        central_row = lat_l1b.shape[0] // 2
+        n_alt = lat_l1b.shape[0]
+        n_act = lat_l1b.shape[1]
 
-        lat = lat_l1b[central_row, :]
-        lon = lon_l1b[central_row, :]
-        distances = np.zeros(len(lat) - 1)
+        central_row = n_alt // 2
+        central_col = n_act // 2
 
-        # Distance between neighboring pixels
-        for ind in range(len(lat) - 1):
-            distances[ind] = haversine(lat[ind], lon[ind], lat[ind+1], lon[ind+1])
+        # -------------------------------------------------------------------------
+        # ACT GSD along the central ALT row
+        # -------------------------------------------------------------------------
+        gsd_act = np.zeros(n_act - 1)
 
-        # Pixel position corresponding to the distance
-        pixel = np.arange(len(distances))
+        for j in range(n_act - 1):
+            gsd_act[j] = haversine(
+                lat_l1b[central_row, j],
+                lon_l1b[central_row, j],
+                lat_l1b[central_row, j + 1],
+                lon_l1b[central_row, j + 1]
+            )
 
-        plt.figure()
-        plt.scatter(pixel, distances, s=0.2)
-        plt.xlabel('ACT pixel')
-        plt.ylabel('Spatial sampling distance [m]')
-        plt.title(
-            'L1B spatial sampling distance - central row '
-            + str(central_row)
-        )
+        act_pixels = np.arange(n_act - 1)
+
+        # -------------------------------------------------------------------------
+        # ALT GSD along the central ACT column
+        # -------------------------------------------------------------------------
+        gsd_alt = np.zeros(n_alt - 1)
+
+        for i in range(n_alt - 1):
+            gsd_alt[i] = haversine(
+                lat_l1b[i, central_col],
+                lon_l1b[i, central_col],
+                lat_l1b[i + 1, central_col],
+                lon_l1b[i + 1, central_col]
+            )
+
+        alt_pixels = np.arange(n_alt - 1)
+
+        # -------------------------------------------------------------------------
+        # Combined line plot
+        # -------------------------------------------------------------------------
+        plt.figure(figsize=(10, 5))
+
+        plt.plot(act_pixels, gsd_act, label='ACT GSD, central ALT row ' + str(central_row))
+        plt.plot(alt_pixels, gsd_alt, label='ALT GSD, central ACT column ' + str(central_col))
+
+        plt.xlabel('Pixel index')
+        plt.ylabel('Ground Sampling Distance [m]')
+        plt.title('L1B Ground Sampling Distance ACT/ALT - Band ' + band)
         plt.grid(True)
+        plt.legend()
 
-        filename = os.path.join(self.outdir, "l1b_spatial_sampling_" + band + ".png")
+        filename = os.path.join(self.outdir, 'l1b_gsd_act_alt_' + band + '.png')
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.close()
+
+        # -------------------------------------------------------------------------
+        # Separate ACT GSD plot
+        # -------------------------------------------------------------------------
+        plt.figure(figsize=(10, 5))
+        plt.plot(act_pixels, gsd_act, color='tab:blue')
+        plt.xlabel('ACT pixel')
+        plt.ylabel('ACT GSD [m]')
+        plt.title('ACT Ground Sampling Distance - Band ' + band)
+        plt.grid(True)
+
+        filename = os.path.join(self.outdir, 'l1b_gsd_act_' + band + '.png')
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # -------------------------------------------------------------------------
+        # Separate ALT GSD plot
+        # -------------------------------------------------------------------------
+        plt.figure(figsize=(10, 5))
+        plt.plot(alt_pixels, gsd_alt, color='tab:orange')
+        plt.xlabel('ALT pixel')
+        plt.ylabel('ALT GSD [m]')
+        plt.title('ALT Ground Sampling Distance - Band ' + band)
+        plt.grid(True)
+
+        filename = os.path.join(self.outdir, 'l1b_gsd_alt_' + band + '.png')
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # -------------------------------------------------------------------------
+        # Print useful statistics to logger
+        # -------------------------------------------------------------------------
+        self.logger.info(
+            'ACT GSD Band ' + band +
+            ': mean=' + str(np.nanmean(gsd_act)) +
+            ' m, min=' + str(np.nanmin(gsd_act)) +
+            ' m, max=' + str(np.nanmax(gsd_act)) + ' m'
+        )
+
+        self.logger.info(
+            'ALT GSD Band ' + band +
+            ': mean=' + str(np.nanmean(gsd_alt)) +
+            ' m, min=' + str(np.nanmin(gsd_alt)) +
+            ' m, max=' + str(np.nanmax(gsd_alt)) + ' m'
+        )
 
     def checkSize(self, lat, toa):
         '''
@@ -165,4 +235,4 @@ class l1c(initL1c):
         :param toa: Radiance 2D matrix
         :return: NA
         '''
-        #TODO
+        assert (np.shape(lat) == np.shape(toa))

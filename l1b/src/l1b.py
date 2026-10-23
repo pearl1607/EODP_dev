@@ -26,6 +26,12 @@ class l1b(initL1b):
             # -------------------------------------------------------------------------------
             toa = readToa(self.indir, self.globalConfig.ism_toa + band + '.nc')
 
+            # Store original raw DN for plotting
+            toa_raw = toa.copy()
+            toa_eq = None
+            eq_mult = None
+            eq_add = None
+
             # Equalization (radiometric correction)
             # -------------------------------------------------------------------------------
             if self.l1bConfig.do_equalization:
@@ -37,6 +43,7 @@ class l1b(initL1b):
 
                 # Do the equalization and save to file
                 toa = self.equalization(toa, eq_add, eq_mult)
+                toa_eq = toa.copy()
                 writeToa(self.outdir, self.globalConfig.l1b_toa_eq + band, toa)
 
             # Restitution (absolute radiometric gain)
@@ -48,6 +55,17 @@ class l1b(initL1b):
             # -------------------------------------------------------------------------------
             writeToa(self.outdir, self.globalConfig.l1b_toa + band, toa)
             self.plotL1bToa(toa, self.outdir, band)
+
+            self.plotCalibration(
+                toa_raw=toa_raw,
+                toa_eq=toa_eq,
+                toa_l1b=toa,
+                eq_add=eq_add,
+                eq_mult=eq_mult,
+                gain=self.l1bConfig.gain[getIndexBand(band)],
+                outputdir=self.outdir,
+                band=band
+            )
 
             self.logger.info("End of BAND " + band)
 
@@ -116,4 +134,68 @@ class l1b(initL1b):
             'l1b_toa_' + band + '_ALT' + str(idalt) + '.png'
         )
         plt.savefig(filename_1d, dpi=300, bbox_inches='tight')
+        plt.close()
+
+    def plotCalibration(self, toa_raw, toa_eq, toa_l1b, eq_add, eq_mult, gain, outputdir, band):
+        """
+        Plot L1B calibration steps:
+        raw DN -> equalized DN -> radiance.
+
+        :param toa_raw: raw ISM TOA in DN
+        :param toa_eq: equalized TOA in DN
+        :param toa_l1b: restored L1B TOA in radiance
+        :param eq_add: additive equalization factor
+        :param eq_mult: multiplicative equalization factor
+        :param gain: absolute radiometric gain
+        :param outputdir: output directory
+        :param band: band name
+        """
+
+        idalt = toa_raw.shape[0] // 2
+
+        # -------------------------------------------------------------------------
+        # Plot central row: raw DN, equalized DN, final radiance
+        # -------------------------------------------------------------------------
+        fig, ax1 = plt.subplots(figsize=(10, 5))
+
+        ax1.plot(toa_raw[idalt, :], label='Raw ISM DN', color='tab:blue', linewidth=1)
+        if toa_eq is not None:
+            ax1.plot(toa_eq[idalt, :], label='Equalized DN', color='tab:orange', linewidth=1)
+
+        ax1.set_xlabel('ACT pixel')
+        ax1.set_ylabel('Digital Number [DN]')
+        ax1.grid(True)
+
+        ax2 = ax1.twinx()
+        ax2.plot(toa_l1b[idalt, :], label='L1B radiance', color='tab:green', linestyle="dotted", linewidth=1)
+        ax2.set_ylabel('Radiance [mW/m²/sr]')
+
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_2, labels_2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='best')
+
+        plt.title('L1B calibration profile - Band ' + band + ' - ALT ' + str(idalt))
+
+        filename = os.path.join(outputdir, 'l1b_calibration_profile_' + band + '.png')
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # -------------------------------------------------------------------------
+        # Histogram before and after calibration
+        # -------------------------------------------------------------------------
+        plt.figure(figsize=(8, 5))
+
+        plt.hist(toa_raw.flatten(), bins=100, alpha=0.5, label='Raw ISM DN')
+
+        if toa_eq is not None:
+            plt.hist(toa_eq.flatten(), bins=100, alpha=0.5, label='Equalized DN')
+
+        plt.xlabel('Digital Number [DN]')
+        plt.ylabel('Number of pixels')
+        plt.title('L1B calibration histogram - Band ' + band)
+        plt.legend()
+        plt.grid(True)
+
+        filename = os.path.join(outputdir, 'l1b_calibration_histogram_' + band + '.png')
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.close()
